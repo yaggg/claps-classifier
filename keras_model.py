@@ -9,6 +9,7 @@ def create_model(input_length):
     model.add(layers.Conv1D(32, 5, activation='relu'))
     model.add(layers.MaxPooling1D(3))
     model.add(layers.Conv1D(32, 5, activation='relu'))
-    model.add(layers.GlobalMaxPooling1D())
+    model.add(layers.Flatten())
+    model.add(layers.Dense(32, activation='relu'))
     model.add(layers.Dense(1, activation='sigmoid'))
     return model

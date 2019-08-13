@@ -1,55 +1,58 @@
-from numpy import correlate
 import numpy as np
 
-cross_correlation_threshold = 0.2
-supposed_feature_duration = 10_000
+data_base_path = 'data/'
+pattern_filename = 'new-pattern.npy'
+supposed_feature_duration = 500
+feature_count = 50
 
 
-def find_features_cross_corr(series, pattern, threshold=cross_correlation_threshold):
-    correlation = correlate(series, pattern)
-    max_corr = correlate(pattern, pattern)[0]
-    correlation /= max_corr
+def get_pattern():
+    return np.load(data_base_path + pattern_filename).astype(np.float64)
+
+
+def preprocess_data(series):
+    if len(series.shape) != 1 and series.shape[-1] != 1:
+        series = series[:, 0]
+    series = series.astype(np.float64)
+    return series
+
+
+def find_features_cross_corr(series, pattern):
+    pattern = normalize_segment(pattern)
+    correlation = evaluate_correlation_array(series, pattern)
     features = []
     features_indices = []
-    index = 0
-    while index < len(correlation):
-        if correlation[index] > threshold and feature_has_enough_length(correlation, index):
-            features.append(normalize_segment(np.copy(series[index: index + supposed_feature_duration])))
+    for index, value in sort_correlations_by_relevance(correlation):
+        if not is_too_close_to_any_feature(index, features_indices):
+            segment = series[index: index + supposed_feature_duration]
+            segment = normalize_segment(segment)
+            features.append(segment)
             features_indices.append(index)
-            index += supposed_feature_duration
-        else:
-            index += 1
+            if len(features) == feature_count:
+                break
     return features, features_indices
 
 
-def find_features_cross_corr_slow(series, pattern, threshold=cross_correlation_threshold):
-    pattern = np.abs(normalize_segment(pattern))
+def sort_correlations_by_relevance(correlation):
+    return sorted(enumerate(correlation), key=lambda x: x[1], reverse=True)
+
+
+def is_too_close_to_any_feature(index, features_indices):
+    list(filter(lambda x: 2 * abs(x - index) < supposed_feature_duration, features_indices))
+
+
+def evaluate_correlation_array(series, pattern):
     correlation_array_len = len(series) - supposed_feature_duration
     correlation = np.zeros(correlation_array_len)
     for index in range(correlation_array_len):
-        series_segment = np.abs(normalize_segment(np.copy(series[index: index + supposed_feature_duration])))
+        series_segment = series[index: index + supposed_feature_duration]
+        series_segment = normalize_segment(series_segment)
         correlation[index] = (series_segment * pattern).sum()
-    max_corr = correlate(pattern, pattern)[0]
-    correlation /= max_corr
-    features = []
-    features_indices = []
-    index = 0
-    while index < len(correlation):
-        if correlation[index] > threshold:
-            series_segment = normalize_segment(np.copy(series[index: index + supposed_feature_duration]))
-            features.append(series_segment)
-            features_indices.append(index)
-            index += supposed_feature_duration
-        else:
-            index += 1
-    return features, features_indices
-
-
-def feature_has_enough_length(correlation, index):
-    return len(correlation) - index >= supposed_feature_duration
+    return correlation
 
 
 def normalize_segment(series_segment):
+    series_segment = np.copy(series_segment)
     segment_mean = series_segment.mean()
     segment_abs_max = np.abs(series_segment).max()
     if segment_abs_max != 0:
