@@ -1,61 +1,61 @@
 import numpy as np
+from scipy.io import wavfile as wf
 
 data_base_path = 'data/'
-pattern_filename = 'new-pattern.npy'
-supposed_feature_duration = 500
-feature_count = 50
 
 
-def get_pattern():
-    return np.load(data_base_path + pattern_filename).astype(np.float64)
+class FeatureExtractor:
+    def __init__(self, pattern_file=data_base_path + 'pattern.npy', feature_count=20, distance_factor=5):
+        self.pattern_filename = pattern_file
+        self.pattern = np.load(self.pattern_filename).astype(np.float64)
+        self.pattern = self._preprocess_data(self.pattern)
+        self.feature_duration = len(self.pattern)
+        self.feature_count = feature_count
+        self.distance_factor = distance_factor
 
+    def extract_features_from_file(self, filename):
+        series = self.read_series(filename)
+        series = self._preprocess_data(series)
+        return self._find_features_cross_corr(series)
 
-def preprocess_data(series):
-    if len(series.shape) != 1 and series.shape[-1] != 1:
-        series = series[:, 0]
-    series = series.astype(np.float64)
-    return series
+    @staticmethod
+    def read_series(filename):
+        _, series = wf.read(filename)
+        if len(series.shape) != 1 and series.shape[-1] != 1:
+            series = series[:, 0]
+        return series
 
+    def _preprocess_data(self, series):
+        series = series.astype(np.float64)
+        series /= np.abs(self.pattern.max())
+        series -= self.pattern.mean()
+        return series
 
-def find_features_cross_corr(series, pattern):
-    pattern = normalize_segment(pattern)
-    correlation = evaluate_correlation_array(series, pattern)
-    features = []
-    features_indices = []
-    for index, value in sort_correlations_by_relevance(correlation):
-        if not is_too_close_to_any_feature(index, features_indices):
-            segment = series[index: index + supposed_feature_duration]
-            segment = normalize_segment(segment)
-            features.append(segment)
-            features_indices.append(index)
-            if len(features) == feature_count:
-                break
-    return features, features_indices
+    def _find_features_cross_corr(self, series):
+        correlation = np.correlate(series, self.pattern)
+        features = []
+        features_indices = []
+        for index, value in self._sort_correlations_by_relevance(correlation):
+            if not self._is_too_close_to_any_feature(index, features_indices):
+                segment = series[index: index + self.feature_duration]
+                segment = self._normalize_segment(segment)
+                features.append(segment)
+                features_indices.append(index)
+                if len(features) == self.feature_count:
+                    break
+        return features, features_indices
 
+    def _sort_correlations_by_relevance(self, correlation):
+        return np.sort(np.asarray(list(enumerate(correlation)), dtype=[('index', int), ('value', np.float64)]),
+                       order=['value'])
 
-def sort_correlations_by_relevance(correlation):
-    return sorted(enumerate(correlation), key=lambda x: x[1], reverse=True)
+    def _is_too_close_to_any_feature(self, index, features_indices):
+        return list(filter(lambda x: abs(x - index) < self.distance_factor * self.feature_duration, features_indices))
 
-
-def is_too_close_to_any_feature(index, features_indices):
-    list(filter(lambda x: 2 * abs(x - index) < supposed_feature_duration, features_indices))
-
-
-def evaluate_correlation_array(series, pattern):
-    correlation_array_len = len(series) - supposed_feature_duration
-    correlation = np.zeros(correlation_array_len)
-    for index in range(correlation_array_len):
-        series_segment = series[index: index + supposed_feature_duration]
-        series_segment = normalize_segment(series_segment)
-        correlation[index] = (series_segment * pattern).sum()
-    return correlation
-
-
-def normalize_segment(series_segment):
-    series_segment = np.copy(series_segment)
-    segment_mean = series_segment.mean()
-    segment_abs_max = np.abs(series_segment).max()
-    if segment_abs_max != 0:
-        series_segment -= segment_mean
-        series_segment /= segment_abs_max
-    return series_segment
+    def _normalize_segment(self, series_segment):
+        series_segment = np.copy(series_segment)
+        abs_max = np.abs(series_segment.max())
+        series_segment /= abs_max
+        mean = series_segment.mean()
+        series_segment -= mean
+        return series_segment

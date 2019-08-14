@@ -1,9 +1,10 @@
-from keras.models import model_from_json
-from scipy.io import wavfile as wf
 from feature_extraction import *
+from keras_model import KerasModelWrapper
 import numpy as np
 import matplotlib.pyplot as plt
 
+model_json_file = data_base_path + "model2019-08-14 09:00:26.657537.json"
+model_weights_file = data_base_path + "model2019-08-14 09:00:26.657537.h5"
 test_files = [
     '/home/yakov/sound-search/ESC-50-master/audio/1-115920-A-22.wav',  # low frequency shit
     '/home/yakov/Documents/sum.wav',
@@ -13,55 +14,37 @@ test_files = [
     '/home/yakov/Audio/2019-08-09-08:36:07.wav'
 ]
 series_filename = test_files[-1]
-model_json_filename = data_base_path + "model2019-08-13 21:00:23.212254.json"
-model_weights_filename = data_base_path + "model2019-08-13 21:00:23.212254.h5"
-classification_threshold = 0.1
-
-
-def read_series_from_file(filename):
-    _, series = wf.read(filename)
-    series = preprocess_data(series)
-    return series
-
-
-def extract_features_from_file(series):
-    pattern = get_pattern()
-    return find_features_cross_corr(series, pattern)
+classification_threshold = 0.2
 
 
 def convert_features_to_keras_model_input(features):
-    to_predict = np.zeros((len(features), supposed_feature_duration))
+    to_predict = np.zeros((len(features), extractor.feature_duration))
     for index, feature in enumerate(features):
         to_predict[index, :] = feature
-    return to_predict.reshape((len(features), supposed_feature_duration, 1))
-
-
-def get_keras_model():
-    model_file = open(model_json_filename)
-    loaded_model = model_file.read()
-    model = model_from_json(loaded_model)
-    model.load_weights(model_weights_filename)
-    return model
+    return to_predict.reshape((len(features), extractor.feature_duration, 1))
 
 
 def extract_claps_from_predictions(indices, prediction):
     claps = np.zeros(len(series))
     for index, prediction in zip(indices, prediction):
         if prediction > classification_threshold:
-            claps[index: index + supposed_feature_duration] = 1
+            claps[index: index + extractor.feature_duration] = 1
     return claps
 
 
 def show_predictions(series, claps):
+    scaling_factor = 10_000
     plt.plot(series)
-    plt.plot(claps * 10_000)
+    plt.plot(claps * scaling_factor)
     plt.show()
 
 
-series = read_series_from_file(series_filename)
-features, feature_positions = extract_features_from_file(series)
+extractor = FeatureExtractor(feature_count=20)
+series = extractor.read_series(series_filename)
+features, feature_positions = extractor.extract_features_from_file(series_filename)
 prepared_features = convert_features_to_keras_model_input(features)
-model = get_keras_model()
+model = KerasModelWrapper(input_length=extractor.feature_duration, model_json_filename=model_json_file,
+                          model_weights_filename=model_weights_file).model
 prediction = model.predict(prepared_features)
 claps = extract_claps_from_predictions(feature_positions, prediction)
 show_predictions(series, claps)
