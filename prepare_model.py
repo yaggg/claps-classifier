@@ -49,10 +49,12 @@ def extract_features_from_file():
            np.array(clap_labels[:one_class_sample_count] + non_clap_labels[:one_class_sample_count])
 
 
-extractor = FeatureExtractor()
-wrapper = KerasModelWrapper(input_length=extractor.feature_duration)
+pattern_filenames = ['data/pattern-1.npy', 'data/pattern-2.npy']
+extractor = FeatureExtractor(feature_count=10, distance_factor=10, pattern_files=pattern_filenames,
+                             segment_duration=1024, feature_size=64)
+wrapper = KerasModelWrapper(input_length=extractor.feature_size)
 all_features, all_labels = get_features_and_labels()
 x_train, x_test, y_train, y_test = train_test_split(all_features, all_labels, test_size=0.3)
-history = wrapper.fit_model(x_train, x_test, y_train, y_test, extractor.feature_duration, epochs=10, steps=1)
+history = wrapper.fit_model(x_train, x_test, y_train, y_test, extractor.feature_size)
 wrapper.save_model()
 wrapper.show_learning_curve(history)

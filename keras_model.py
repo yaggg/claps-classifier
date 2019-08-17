@@ -17,12 +17,12 @@ class KerasModelWrapper:
         else:
             self.model = self._create_model()
 
-    def fit_model(self, x_train, x_test, y_train, y_test, feature_duration, epochs=20, steps=30, val_steps=30):
+    def fit_model(self, x_train, x_test, y_train, y_test, feature_size, epochs=20, steps=30, val_steps=30):
         self.model.summary()
         self.model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['acc'])
         history = self.model.fit(
-            x_train.reshape(len(x_train), feature_duration, 1), y_train,
-            validation_data=(x_test.reshape(len(x_test), feature_duration, 1), y_test),
+            x_train.reshape(len(x_train), feature_size, 1), y_train,
+            validation_data=(x_test.reshape(len(x_test), feature_size, 1), y_test),
             epochs=epochs, steps_per_epoch=steps, validation_steps=val_steps, shuffle=True
         )
         return history
@@ -41,8 +41,10 @@ class KerasModelWrapper:
         model = Sequential()
         model.add(layers.Conv1D(32, 7, activation='relu', input_shape=(self.input_length, 1)))
         model.add(layers.MaxPooling1D(5))
+        model.add(layers.Dropout(0.2))
         model.add(layers.Conv1D(32, 5, activation='relu'))
         model.add(layers.MaxPooling1D(3))
+        model.add(layers.Dropout(0.2))
         model.add(layers.Flatten())
         model.add(layers.Dense(128, activation='relu'))
         model.add(layers.Dropout(0.2))
