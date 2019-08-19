@@ -12,7 +12,7 @@ claps_dir = data_base_path + 'claps/'
 non_claps_dir = data_base_path + 'non-claps/'
 all_features_file = data_base_path + 'all_features.npy'
 all_labels_file = data_base_path + 'all_labels.npy'
-count_of_files_to_extract_features = 1500
+count_of_files_to_extract_features = 1000
 
 
 def get_features_and_labels():
@@ -51,9 +51,9 @@ def extract_features_from_file():
 
 pattern_filenames = ['data/pattern-1.npy', 'data/pattern-2.npy']
 claps_extractor = FeatureExtractor(feature_count=5, distance_factor=10, pattern_files=pattern_filenames,
-                                   segment_duration=1024, feature_size=127)
+                                   segment_duration=1024, feature_size=128)
 non_claps_extractor = FeatureExtractor(feature_count=1, distance_factor=10, pattern_files=pattern_filenames,
-                                       segment_duration=1024, feature_size=127)
+                                       segment_duration=1024, feature_size=128)
 wrapper = KerasModelWrapper(input_length=claps_extractor.feature_size)
 all_features, all_labels = get_features_and_labels()
 x_train, x_test, y_train, y_test = train_test_split(all_features, all_labels, test_size=0.3)

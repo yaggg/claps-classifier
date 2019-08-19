@@ -3,20 +3,10 @@ from keras_model import KerasModelWrapper
 import numpy as np
 import matplotlib.pyplot as plt
 
-model_json_file = data_base_path + "model2019-08-17 21:07:23.653951.json"
-model_weights_file = data_base_path + "model2019-08-17 21:07:23.653951.h5"
-test_files = [
-    '/home/yakov/sound-search/ESC-50-master/audio/1-115920-A-22.wav',  # low frequency shit
-    '/home/yakov/Documents/sum.wav',
-    '/home/yakov/Audio/test_sum.wav',
-    '/home/yakov/Audio/2019-08-04-20:18:28.wav',
-    '/home/yakov/Audio/2019-08-07-20:59:27.wav',
-    '/home/yakov/Audio/2019-08-09-08:36:07.wav',
-    '/home/yakov/Audio/mix.wav',
-    '/home/yakov/Audio/2019-08-17-20:23:44.wav'
-]
-series_filename = test_files[-1]
-classification_threshold = 0.5
+model_json_file = data_base_path + "model2019-08-19 22:59:39.933736.json"
+model_weights_file = data_base_path + "model2019-08-19 22:59:39.933736.h5"
+series_filename = "PUT FILENAME HERE"
+classification_threshold = 0.2
 
 
 def convert_features_to_keras_model_input(features):

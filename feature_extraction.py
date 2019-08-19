@@ -55,6 +55,7 @@ class FeatureExtractor:
         for index, value in self._sort_correlations_by_relevance(correlation):
             if not self._is_too_close_to_any_feature(index, features_indices):
                 segment = series[index: index + self.feature_duration]
+                segment = segment * np.hanning(len(segment))
                 segment = self._normalize_segment(segment)
                 feature = mfcc(segment, n_mfcc=self.feature_size, sr=sr)
                 feature = feature.mean(axis=1)

@@ -43,7 +43,7 @@ class KerasModelWrapper:
         model.add(layers.MaxPooling1D(5))
         model.add(layers.BatchNormalization())
         model.add(layers.Dropout(0.5))
-        model.add(layers.Conv1D(32, 5, activation='relu'))
+        model.add(layers.Conv1D(64, 5, activation='relu'))
         model.add(layers.MaxPooling1D(5))
         model.add(layers.BatchNormalization())
         model.add(layers.Dropout(0.5))
