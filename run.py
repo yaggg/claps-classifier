@@ -3,8 +3,8 @@ from keras_model import KerasModelWrapper
 import numpy as np
 import matplotlib.pyplot as plt
 
-model_json_file = data_base_path + "model2019-08-19 22:59:39.933736.json"
-model_weights_file = data_base_path + "model2019-08-19 22:59:39.933736.h5"
+model_json_file = data_base_path + "best.json"
+model_weights_file = data_base_path + "best.h5"
 series_filename = "PUT FILENAME HERE"
 classification_threshold = 0.2
 
